@@ -35,8 +35,8 @@ class SettingsScreen(ModalScreen[None]):
         width: 80%;
         height: auto;
         max-height: 80%;
-        border: round $primary;
-        background: $surface;
+        border: solid $primary;
+        background: $ansi-background;
         padding: 1 2;
     }
     SettingsScreen Label {

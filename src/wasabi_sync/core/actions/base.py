@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
-from wasabi_sync.models import Selection
+from wasabi_sync.models import Project, Selection
 from wasabi_sync.settings import Settings
 
 
@@ -21,4 +22,9 @@ class ActionReport:
 class Action(Protocol):
     """Behaviour triggered by a tab's submit button."""
 
-    def run(self, selection: Selection, settings: Settings) -> ActionReport: ...
+    def run(
+        self,
+        projects: Sequence[Project],
+        selection: Selection,
+        settings: Settings,
+    ) -> ActionReport: ...

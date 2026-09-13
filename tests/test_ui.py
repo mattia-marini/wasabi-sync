@@ -7,6 +7,7 @@ from pathlib import Path
 from textual.widgets import Button, Input, Static, TabbedContent
 
 from wasabi_sync.app import WasabiSyncApp
+from wasabi_sync.reaper.rpp import parse_rpp
 from wasabi_sync.settings import Settings
 from wasabi_sync.ui.browser import BrowserScreen
 from wasabi_sync.ui.export_view import ExportView
@@ -36,8 +37,8 @@ async def test_app_boots_and_switches_tabs(library, tmp_path):
         assert tabbed.active_pane.id == "tab-export"
 
 
-async def test_export_view_populates_from_settings(library, tmp_path):
-    app = make_app(Settings(projects_dir=library), tmp_path)
+async def test_export_view_populates_from_settings(rpp_library, tmp_path):
+    app = make_app(Settings(projects_dir=rpp_library), tmp_path)
     async with app.run_test() as pilot:
         await pilot.pause()
         view = app.query_one(ExportView)
@@ -61,8 +62,8 @@ async def test_unconfigured_view_shows_hint(tmp_path):
         assert len(app.query_one(ExportView).project_tree.root.children) == 0
 
 
-async def test_checking_parent_ticks_children(library, tmp_path):
-    app = make_app(Settings(projects_dir=library), tmp_path)
+async def test_checking_parent_ticks_children(rpp_library, tmp_path):
+    app = make_app(Settings(projects_dir=rpp_library), tmp_path)
     async with app.run_test() as pilot:
         await pilot.pause()
         view = app.query_one(ExportView)
@@ -78,8 +79,8 @@ async def test_checking_parent_ticks_children(library, tmp_path):
         assert app.query_one("#export-submit").disabled is False
 
 
-async def test_unchecking_child_flips_parent_to_mixed(library, tmp_path):
-    app = make_app(Settings(projects_dir=library), tmp_path)
+async def test_unchecking_child_flips_parent_to_mixed(rpp_library, tmp_path):
+    app = make_app(Settings(projects_dir=rpp_library), tmp_path)
     async with app.run_test() as pilot:
         await pilot.pause()
         view = app.query_one(ExportView)
@@ -95,8 +96,8 @@ async def test_unchecking_child_flips_parent_to_mixed(library, tmp_path):
         assert alpha._label.plain.startswith("☒")
 
 
-async def test_toggle_all_round_trip(library, tmp_path):
-    app = make_app(Settings(projects_dir=library), tmp_path)
+async def test_toggle_all_round_trip(rpp_library, tmp_path):
+    app = make_app(Settings(projects_dir=rpp_library), tmp_path)
     async with app.run_test() as pilot:
         await pilot.pause()
         view = app.query_one(ExportView)
@@ -114,8 +115,8 @@ async def test_toggle_all_round_trip(library, tmp_path):
         assert view.current_selection() == {}
 
 
-async def test_space_toggles_cursor_row(library, tmp_path):
-    app = make_app(Settings(projects_dir=library), tmp_path)
+async def test_space_toggles_cursor_row(rpp_library, tmp_path):
+    app = make_app(Settings(projects_dir=rpp_library), tmp_path)
     async with app.run_test() as pilot:
         await pilot.pause()
         view = app.query_one(ExportView)
@@ -129,8 +130,8 @@ async def test_space_toggles_cursor_row(library, tmp_path):
         assert len(selection["alpha"]) == 5
 
 
-async def test_refresh_preserves_checked_state(library, tmp_path):
-    app = make_app(Settings(projects_dir=library), tmp_path)
+async def test_refresh_preserves_checked_state(rpp_library, tmp_path):
+    app = make_app(Settings(projects_dir=rpp_library), tmp_path)
     async with app.run_test() as pilot:
         await pilot.pause()
         view = app.query_one(ExportView)
@@ -156,8 +157,18 @@ async def test_live_view_shows_validation(library, tmp_path):
         assert "3/5 audio files" in rows[2].suffix.plain
 
 
-async def test_submit_reports_stub(library, tmp_path):
-    app = make_app(Settings(projects_dir=library), tmp_path)
+async def test_muted_track_shows_indicator(rpp_library, tmp_path):
+    app = make_app(Settings(projects_dir=rpp_library), tmp_path)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        rows = app.query_one(ExportView).project_tree.rows
+        bravo = rows[1]
+        assert bravo.children[4].suffix is not None
+        assert "MUTED" in bravo.children[4].suffix.plain
+
+
+async def test_submit_unmutes_master_tracks(rpp_library, tmp_path):
+    app = make_app(Settings(projects_dir=rpp_library), tmp_path)
     async with app.run_test() as pilot:
         await pilot.pause()
         app.query_one(ExportView).project_tree.focus()
@@ -165,14 +176,15 @@ async def test_submit_reports_stub(library, tmp_path):
         await pilot.pause()
         await pilot.click("#export-submit")
         await pilot.pause()
+        text = (rpp_library / "bravo" / "bravo.rpp").read_text(encoding="utf-8")
+        tracks = {track.name: track for track in parse_rpp(text).tracks}
+        assert tracks["track_05"].muted is False
         notifications = list(app._notifications._notifications.values())
         assert notifications
-        assert "stub" in notifications[-1].message
-        status = app.query_one("#export-status", Static)
-        assert "[stub]" in str(status.content)
+        assert "Unmuted 1 track(s)" in notifications[-1].message
 
 
-async def test_settings_flow_saves_and_refreshes(library, tmp_path):
+async def test_settings_flow_saves_and_refreshes(rpp_library, library, tmp_path):
     app = make_app(Settings(), tmp_path)
     async with app.run_test() as pilot:
         await pilot.pause()
@@ -180,14 +192,14 @@ async def test_settings_flow_saves_and_refreshes(library, tmp_path):
         await pilot.pause()
         assert isinstance(app.screen, SettingsScreen)
         screen = app.screen
-        screen.query_one("#projects-input", Input).value = str(library)
+        screen.query_one("#projects-input", Input).value = str(rpp_library)
         screen.query_one("#exports-input", Input).value = str(library)
         screen.query_one("#settings-save", Button).press()
         await pilot.pause()
         assert isinstance(app.screen, MainScreen)
-        assert app.settings.projects_dir == library
+        assert app.settings.projects_dir == rpp_library
         assert app.settings.exports_dir == library
-        assert app.store.load().projects_dir == library
+        assert app.store.load().projects_dir == rpp_library
         assert len(app.query_one(ExportView).project_tree.root.children) == 3
         assert len(app.query_one(LiveView).project_tree.root.children) == 3
 

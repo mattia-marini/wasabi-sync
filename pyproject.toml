@@ -1,7 +1,7 @@
 [project]
 name = "wasabi-sync"
 version = "0.1.0"
-description = "Add your description here"
+description = "Textual TUI to synchronise multiple REAPER projects (export and live-set generation)."
 readme = "README.md"
 authors = [
     { name = "Mattia", email = "marmattia@gmail.com" }

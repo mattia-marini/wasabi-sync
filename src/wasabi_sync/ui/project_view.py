@@ -38,16 +38,18 @@ class ProjectView(Vertical):
     ProjectView .toolbar {
         height: 3;
         align-horizontal: left;
+        align-vertical: middle;
     }
     ProjectView .toolbar Button {
         margin: 0 1 0 0;
     }
     ProjectView CheckboxTree {
         height: 1fr;
-        border: round $primary;
+        border: none;
     }
     ProjectView .status-row {
         height: 3;
+        align-vertical: middle;
     }
     ProjectView .status-row Static {
         width: 1fr;
@@ -166,12 +168,23 @@ class ProjectView(Vertical):
         if not selection:
             self.app.notify("Nothing selected.", severity="warning")
             return
-        self._run_action(self.make_action(), selection, self.app_settings)
+        self._run_action(
+            self.make_action(),
+            self._projects,
+            selection,
+            self.app_settings,
+        )
 
     @work(thread=True, exclusive=True, group="submit")
-    def _run_action(self, action: Action, selection: Selection, settings: Settings) -> None:
+    def _run_action(
+        self,
+        action: Action,
+        projects: Sequence[Project],
+        selection: Selection,
+        settings: Settings,
+    ) -> None:
         try:
-            report = action.run(selection, settings)
+            report = action.run(projects, selection, settings)
         except Exception:
             logger.exception("Submit action failed")
             report = ActionReport(

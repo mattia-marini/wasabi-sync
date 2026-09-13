@@ -33,8 +33,8 @@ class BrowserScreen(ModalScreen[Path | None]):
     BrowserScreen #browser-dialog {
         width: 70%;
         height: 70%;
-        border: round $primary;
-        background: $surface;
+        border: solid $primary;
+        background: $ansi-background;
         padding: 1;
     }
     BrowserScreen #browser-input {

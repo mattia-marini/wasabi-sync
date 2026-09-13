@@ -23,13 +23,19 @@ class EntryStatus(StrEnum):
 
 @dataclass
 class Entry:
-    """A selectable item inside a project (typically an audio file)."""
+    """A selectable item inside a project.
+
+    On the Export tab an entry is a track that sends audio directly to
+    the master (``muted`` reflects its current state); on the LIVE tab it
+    is an audio file (``path`` points at the file).
+    """
 
     key: str
     label: str
-    path: Path
+    path: Path | None = None
     status: EntryStatus = EntryStatus.UNKNOWN
     detail: str | None = None
+    muted: bool = False
 
 
 @dataclass
@@ -43,6 +49,7 @@ class Project:
     anomaly: str | None = None
     status: EntryStatus = EntryStatus.UNKNOWN
     detail: str | None = None
+    rpp_path: Path | None = None
 
 
 type Selection = dict[str, set[str]]
