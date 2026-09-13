@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Build dist/wasabi-sync.pyz: a runnable zipapp bundling wasabi-sync and
+# its pure-Python dependencies. Requires Python 3.14 on the target
+# machine; on Windows run it with:  py wasabi-sync.pyz
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+staging="build/pyz"
+mkdir -p dist
+rm -rf "$staging"
+
+uv pip install --target "$staging" .
+
+uv run python -m zipapp "$staging" \
+    -o dist/wasabi-sync.pyz \
+    -p "/usr/bin/env python3" \
+    -m "wasabi_sync:main" \
+    --compress
+
+echo "Built dist/wasabi-sync.pyz"

@@ -7,7 +7,10 @@ authors = [
     { name = "Mattia", email = "marmattia@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "platformdirs>=4.11.8",
+    "textual>=8.2.4,<9",
+]
 
 [project.scripts]
 wasabi-sync = "wasabi_sync:main"
@@ -15,3 +18,25 @@ wasabi-sync = "wasabi_sync:main"
 [build-system]
 requires = ["uv_build>=0.12.9,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.22.2",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.7",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["wasabi_sync"]
